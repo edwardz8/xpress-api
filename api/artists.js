@@ -1,6 +1,6 @@
 const artistsRouter = express.Router({ mergeParams: true});
 const express = require('express');
-const db = new sqlite3.Database(process.env.TEST_DATABASE || './database.sqlite')
+const db = new sqlite3.Database(process.env.TEST_DATABASE || './database.sqlite');
 
 artistsRouter.get ('/', (req, res, next) => {
   db.all('SELECT * FROM Artist WHERE Artist.is_currently_employed = 1', (err, artists) => {
@@ -96,7 +96,32 @@ artistsRouter.put('artistId', (req, res, next) => {
   });
 });
 
-artistsRouter.delete('')
+artistsRouter.delete('/:artistId', (req, res, next) => {
+  if (req.params.artistId) {
+    db.run(
+      `UPDATE Artist ` +
+      `SET is_currently_employed === 0 ` +
+      `WHERE id = ${req.params.artistId}`,
+      function(error) {
+        if (error) {
+          console.log(error);
+          res.status(400).send();
+        }
+        db.get(
+          "SELECT * FROM Artist WHERE id = $id",
+          {
+            $id: req.params.artistId,
+          },
+          (error, rows) => {
+            res.status(200).json({ artist: rows });
+          }
+        );
+      }
+    );
+  } else {
+    res.status(404).send();
+  }
+});
 
 
 /*artistsRouter.get('/artists/:artistId', (req, res, next) => {
